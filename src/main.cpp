@@ -8,35 +8,31 @@
 
 #define ADC_CHANNEL 0;
 
-ADMUX |= (1<<REFS0);
-ADMUX &= ~(REFS1);
-
-ADMUX |= 0b0000;
-
-
-
-
 void setup() {
   Serial.begin(115200);
 
-  ADCSRA |= _BV(ADEN) | _BV(ADPS2) | _BV(ADPS1) | _BV(ADPS0);
-  
-  ADMUX = (ADMUX & 0b11110000) | ADC_CHANNEL;
+  // enable ADC and set prescaler to 128 -> 125kHz @ 16MHz (best conversion rast is between 50 - 200kHz)
+  ADCSRA |= (1 << ADEN) | (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
 
-  ADMUX |= _BV(REFS0);
-  }
+  // set ADC channel of multiplexer
+  ADMUX = (ADMUX & 0b11110000) | ADC_CHANNEL;
+  
+  // set internal 5V reference
+  ADMUX |= (1 << REFS0);
+}
 
 void loop() {
+  //int poti_value = analogRead(A0);
 
-  ADCSRA |= _BV(ADSC);
-  if((ADCSRA & _BV(ADSC)) != 0);
-  {
-    int poti_value = ADC;
-  }
-
+  ADCSRA |= (1 << ADSC);                // start ADC conversion
+  while((ADCSRA & (1 << ADSC)) != 0);   // ADSC is cleared when conversion is completed
+  int poti_value = ADC;               // read ADC value
+  
   float voltage = (poti_value * 5.0) / 1023;
 
   Serial.print("Potentiometer analog value = ");
-  Serial.print("voltage,2");
+  Serial.print(voltage,2);
   Serial.println(" V");
+
+  delay(500);                         // show only 500ms new value
 }
